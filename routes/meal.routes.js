@@ -15,7 +15,7 @@ const router = Router();
 
 router.get('/', findMeals);
 
-router.get('/:id', findMeal);
+router.get('/:id', validMealExists, findMeal);
 
 router.use(protect);
 
@@ -26,7 +26,6 @@ router.post(
     check('price', 'Price is require').not().isEmpty(),
     validateField,
   ],
-  validMealExists,
   restricTo('admin'),
   createMeal
 );

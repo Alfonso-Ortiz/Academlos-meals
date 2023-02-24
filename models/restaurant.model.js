@@ -17,12 +17,13 @@ const Restaurant = db.define('restaurant', {
     allowNull: false,
   },
   rating: {
-    type: DataTypes.ENUM('1', '2', '3', '4', '5'),
+    type: DataTypes.INTEGER,
     allowNull: false,
   },
   status: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
+    defaultValue: true,
   },
 });
 

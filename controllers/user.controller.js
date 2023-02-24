@@ -1,35 +1,74 @@
-const catchAsync = require('../helpers/catchAsync');
-const User = require('../models/user.model');
-const bcrypt = require('bcryptjs');
-const generateJWT = require('../helpers/jwt');
 const AppError = require('../helpers/appError');
+const bcrypt = require('bcryptjs');
+const catchAsync = require('../helpers/catchAsync');
+const generateJWT = require('../helpers/jwt');
+const User = require('../models/user.model');
+const Order = require('../models/order.model');
+const Meal = require('../models/meals.model');
+const Restaurant = require('../models/restaurant.model');
 
-exports.findUsers = catchAsync(async (req, res) => {
-  const users = await User.findAll({
+exports.findOrders = catchAsync(async (req, res, next) => {
+  const { sessionUser } = req;
+
+  const orders = await Order.findAll({
+    attributes: { exclude: ['id', 'mealId', 'updatedAt'] },
     where: {
-      status: true,
+      userId: sessionUser.id,
+      status: 'active',
     },
+    include: [
+      {
+        model: Meal,
+        attributes: ['name', 'price'],
+        include: [
+          {
+            model: Restaurant,
+            attributes: ['name', 'address', 'rating'],
+          },
+        ],
+      },
+    ],
   });
 
   return res.status(200).json({
     status: 'Success',
-    message: 'Users has been found successfully',
-    users,
+    message: 'Orders has been found successfully',
+    orders,
   });
 });
 
-exports.findUser = catchAsync(async (req, res) => {
-  const { user } = req;
+exports.findOrder = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const { sessionUser } = req;
 
-  res.status(200).json({
-    status: 'Success',
-    message: 'User has been found successfully',
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
+  const order = await Order.findOne({
+    attributes: { exclude: ['id', 'createdAt', 'updatedAt', 'status'] },
+    where: {
+      id,
+      userId: sessionUser.id,
+      status: 'active',
     },
+    include: [
+      {
+        model: Meal,
+        attributes: { exclude: ['id', 'createdAt', 'updatedAt', 'status'] },
+        where: {
+          status: true,
+        },
+        include: [
+          {
+            model: Restaurant,
+            attributes: ['name', 'address', 'rating'],
+          },
+        ],
+      },
+    ],
+  });
+
+  return res.status(200).json({
+    status: 'Success',
+    message: 'Order has been found successfully',
+    order,
   });
 });
 
@@ -61,7 +100,6 @@ exports.createUser = catchAsync(async (req, res, next) => {
       role: user.role,
     },
   });
-  next();
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -95,7 +133,6 @@ exports.login = catchAsync(async (req, res, next) => {
       role: user.role,
     },
   });
-  next();
 });
 
 exports.updateUser = catchAsync(async (req, res) => {
@@ -119,5 +156,28 @@ exports.deleteUser = catchAsync(async (req, res) => {
   return res.status(200).json({
     status: 'Success',
     message: 'User has been deleted successfully',
+  });
+});
+
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  const { user } = req;
+
+  const { currentPassword, newPassword } = req.body;
+
+  if (!(await bcrypt.compare(currentPassword, user.password))) {
+    return next(new AppError('Incorrect password', 401));
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const encriptedPassword = await bcrypt.hash(newPassword, salt);
+
+  await user.update({
+    password: encriptedPassword,
+    passwordChangedAt: new Date(),
+  });
+
+  res.status(200).json({
+    status: 'Success',
+    message: 'Password was updated successfully',
   });
 });

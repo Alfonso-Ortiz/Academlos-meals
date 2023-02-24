@@ -8,7 +8,7 @@ const User = require('../models/user.model');
 exports.validateUserExists = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
-  const user = await User.findAll({
+  const user = await User.findOne({
     where: {
       id,
       status: true,
@@ -47,31 +47,6 @@ exports.validateEmailExists = catchAsync(async (req, res, next) => {
   next();
 });
 
-exports.updatePassword = catchAsync(async (req, res, next) => {
-  const { user } = req;
-
-  const { currentPassword, newPassword } = req.body;
-
-  if (!(await bcrypt.compare(currentPassword, user.password))) {
-    return next(new AppError('Incorrect password', 401));
-  }
-
-  const salt = await bcrypt.genSalt(10);
-  const encriptedPassword = await bcrypt.hash(newPassword, salt);
-
-  await user.update({
-    password: encriptedPassword,
-    passwordChangedAt: new Date(),
-  });
-
-  res.status(200).json({
-    status: 'Success',
-    message: 'Password was updated successfully',
-  });
-
-  next();
-});
-
 exports.protect = catchAsync(async (req, res, next) => {
   let token;
 
@@ -94,8 +69,10 @@ exports.protect = catchAsync(async (req, res, next) => {
   );
 
   const user = await User.findOne({
-    id: decoded.id,
-    status: true,
+    where: {
+      id: decoded.id,
+      status: true,
+    },
   });
 
   if (!user) {
@@ -138,5 +115,6 @@ exports.restricTo = (...roles) => {
         new AppError('You do not have permission to perfom this action.!', 403)
       );
     }
+    next();
   };
 };

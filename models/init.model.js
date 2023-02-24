@@ -19,7 +19,11 @@ const initModel = () => {
 
   // 1 restaurant <------------> N reviews
   Restaurant.hasMany(Review, { sourceKey: 'id', foreignKey: 'restaurantId' });
-  Review.hasMany(Restaurant, { sourceKey: 'id', foreignKey: 'restaurantId' });
+  Review.belongsTo(Restaurant, { sourceKey: 'id', foreignKey: 'restaurantId' });
+
+  // N reviews <------------> 1 user
+  User.hasMany(Review, { sourceKey: 'id', foreignKey: 'userId' });
+  Review.belongsTo(User, { sourceKey: 'id', foreignKey: 'userId' });
 };
 
 module.exports = initModel;

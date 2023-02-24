@@ -1,13 +1,15 @@
-const express = require('express');
-const cors = require('cors');
-const morgan = require('morgan');
 const { db } = require('../database/db');
+const cors = require('cors');
+const express = require('express');
+const morgan = require('morgan');
+
 const AppError = require('../helpers/appError');
 const globalErrorHandler = require('../controllers/error.controller');
-const { userRouter } = require('../routes/users.routes');
-const { orderRouter } = require('../routes/order.routes');
+//rutas
 const { mealRouter } = require('../routes/meal.routes');
+const { orderRouter } = require('../routes/order.routes');
 const { restaurantRouter } = require('../routes/restaurant.routes');
+const { userRouter } = require('../routes/users.routes');
 const initModel = require('./init.model');
 
 class Server {
@@ -16,11 +18,11 @@ class Server {
     this.port = process.env.PORT || 6000;
 
     this.paths = {
+      meals: '/api/v1/meals',
+      orders: '/api/v1/orders',
+      restaurants: '/api/v1/restaurants',
+      reviews: '/api/v1/reviews',
       users: '/api/v1/users',
-      orders: 'api/v1/orders',
-      meals: 'api/v1/meals',
-      restaurants: 'api/v1/restaurants',
-      reviews: 'api/v1/reviews',
     };
 
     this.middlewares();
@@ -41,10 +43,10 @@ class Server {
   }
 
   routes() {
-    this.app.use(this.paths.users, userRouter);
-    this.app.use(this.paths.orders, orderRouter);
     this.app.use(this.paths.meals, mealRouter);
+    this.app.use(this.paths.orders, orderRouter);
     this.app.use(this.paths.restaurants, restaurantRouter);
+    this.app.use(this.paths.users, userRouter);
 
     this.app.all('*', (req, res, next) => {
       return next(
@@ -59,7 +61,7 @@ class Server {
       .then(() => console.log('Database authenticated'))
       .catch(error => console.log(error));
 
-    // initModel();
+    initModel();
 
     db.sync()
       .then(() => console.log('Database synced'))

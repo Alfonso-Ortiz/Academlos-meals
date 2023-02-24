@@ -1,66 +1,78 @@
+const AppError = require('../helpers/appError');
 const catchAsync = require('../helpers/catchAsync');
+const Meal = require('../models/meals.model');
 const Order = require('../models/order.model');
-const User = require('../models/user.model');
+const Restaurant = require('../models/restaurant.model');
 
-exports.findOrders = catchAsync(async (req, res, next) => {
-  const { id } = req.params;
+exports.getOrders = catchAsync(async (req, res, next) => {
+  const { sessionUser } = req;
 
-  const { user } = req;
-
-  if (user.id !== sessionUser.id) {
-    const orders = await Order.findAll({
-      where: {
-        id,
-        status: 'active',
+  const orders = await Order.findAll({
+    attributes: { exclude: ['id', 'mealId', 'updatedAt'] },
+    where: {
+      userId: sessionUser.id,
+      status: 'active',
+    },
+    include: [
+      {
+        model: Meal,
+        attributes: ['name', 'price'],
+        include: [
+          {
+            model: Restaurant,
+            attributes: ['name', 'address', 'rating'],
+          },
+        ],
       },
-    });
-
-    return res.status(200).json({
-      status: 'Success',
-      message: 'Orders has been found successfully',
-      orders,
-    });
-  }
-});
-
-exports.findOrder = catchAsync(async (req, res, next) => {
-  const { order } = req;
+    ],
+  });
 
   return res.status(200).json({
     status: 'Success',
-    message: 'Order has been found successfully',
-    order,
+    message: 'Orders has been found successfully',
+    orders,
   });
 });
 
 exports.createOrder = catchAsync(async (req, res, next) => {
   const { mealId, quantity } = req.body;
+  const { sessionUser } = req;
 
-  const newOrder = await Order.create({
+  const meal = await Meal.findOne({
+    where: {
+      id: mealId,
+      status: true,
+    },
+  });
+
+  if (!meal) {
+    return next(new AppError('Meal was not found', 404));
+  }
+
+  const price = meal.price * quantity;
+
+  const order = await Order.create({
     mealId,
+    userId: sessionUser.id,
+    totalPrice: price,
     quantity,
   });
 
   return res.status(200).json({
     status: 'Success',
     message: 'Order created successfully',
-    newOrder,
+    order,
   });
 });
 
 exports.updateOrder = catchAsync(async (req, res, next) => {
   const { order } = req;
-
-  const { status } = req.body;
-
-  const updatedOrder = await order.update({
-    status,
-  });
+  console.log(order);
+  await order.update({ status: 'completed' });
 
   return res.status(200).json({
     status: 'Success',
     message: 'Order updated successfully',
-    updatedOrder,
   });
 });
 

@@ -20,7 +20,7 @@ const Order = db.define('order', {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  quantiy: {
+  quantity: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },

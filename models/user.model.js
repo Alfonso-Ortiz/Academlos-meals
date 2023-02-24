@@ -1,4 +1,4 @@
-const { DataTypes } = require('sequelize');
+const { DataTypes, STRING } = require('sequelize');
 const { db } = require('../database/db');
 
 const User = db.define('user', {
@@ -27,13 +27,15 @@ const User = db.define('user', {
   },
   // modelo creado para mostrar la fecha en la que se actualizo la contraseña
   passwordChangedAt: {
-    type: DataTypes.DATE,
+    type: DataTypes.ENUM('normal', 'admin'),
     allowNull: true,
   },
   role: {
-    type: DataTypes.ENUM('normal', 'admin'),
+    type: DataTypes.STRING,
     allowNull: false,
   },
 });
+
+//
 
 module.exports = User;

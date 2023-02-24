@@ -1,16 +1,17 @@
 const { Router } = require('express');
 const { check } = require('express-validator');
-const { findOrders, findOrder } = require('../controllers/order.controller');
 const {
   createUser,
   login,
   updateUser,
   deleteUser,
+  updatePassword,
+  findOrders,
+  findOrder,
 } = require('../controllers/user.controller');
 const { validOrderExists } = require('../middlewares/order.middleware');
 const {
   validateEmailExists,
-  updatePassword,
   validateUserExists,
   protectAccountOwner,
   protect,

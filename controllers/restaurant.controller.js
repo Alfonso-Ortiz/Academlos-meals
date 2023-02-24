@@ -1,6 +1,7 @@
 const catchAsync = require('../helpers/catchAsync');
 const Restaurant = require('../models/restaurant.model');
 const Review = require('../models/reviews.model');
+const User = require('../models/user.model');
 
 exports.createRestaurant = catchAsync(async (req, res, next) => {
   const { name, address, rating } = req.body;
@@ -19,16 +20,28 @@ exports.createRestaurant = catchAsync(async (req, res, next) => {
 });
 
 exports.findRestaurants = catchAsync(async (req, res, next) => {
-  const restaurant = Restaurant.findAll({
+  const restaurants = await Restaurant.findAll({
+    attributes: { exclude: ['createdAt', 'updatedAt', 'status'] },
     where: {
       status: true,
     },
+    include: [
+      {
+        model: Review,
+        attributes: ['comment', 'rating', 'createdAt'],
+        include: [
+          {
+            model: User,
+            attributes: ['name'],
+          },
+        ],
+      },
+    ],
   });
-
   return res.status(200).json({
     status: 'Success',
     message: 'Restaurants has been found successfully',
-    restaurant,
+    restaurants,
   });
 });
 
@@ -38,17 +51,12 @@ exports.findRestaurant = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'Success',
     message: 'Restaurant has been found successfully',
-    restaurant: {
-      name: restaurant.name,
-      address: restaurant.address,
-      rating: restaurant.rating,
-    },
+    restaurant,
   });
 });
 
 exports.updateRestaurant = catchAsync(async (req, res, next) => {
   const { name, address } = req.body;
-
   const { restaurant } = req;
 
   await restaurant.update({ name, address });
@@ -72,8 +80,12 @@ exports.deleteRestaurant = catchAsync(async (req, res, next) => {
 
 exports.reviews = catchAsync(async (req, res, next) => {
   const { comment, rating } = req.body;
+  const { sessionUser } = req;
+  const { id } = req.params;
 
   const review = await Review.create({
+    userId: sessionUser.id,
+    restaurantId: id,
     comment,
     rating,
   });
